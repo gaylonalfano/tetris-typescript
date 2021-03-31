@@ -9,27 +9,30 @@ document.addEventListener("DOMContentLoaded", (e) => {
 
   // DOM Elements
   const grid = document.querySelector(".grid") as HTMLDivElement;
-  // const squares = Array.from(
-  //   document.querySelectorAll(".grid div")
-  // ) as HTMLDivElement[];
-  // console.log(squares);
-  const squares = document.querySelectorAll(
-    ".grid div"
-  ) as NodeListOf<HTMLDivElement>;
+  // squares as Array<HTMLDivElement>
+  const squares = Array.from(
+    document.querySelectorAll(".grid div")
+  ) as HTMLDivElement[];
   // Use data-* attribute to assign each div an index
-  squares.forEach((square, key) => {
-    square.dataset.index = key.toString();
+  squares.forEach((square, index) => {
+    square.dataset.index = index.toString();
+    // Add labels to help
+    square.textContent = index.toString();
   });
+
+  // squares as NodeListOf<HTMLDivElement>
+  // const squares = document.querySelectorAll(
+  //   ".grid div"
+  // ) as NodeListOf<HTMLDivElement>;
+  // // Use data-* attribute to assign each div an index
+  // squares.forEach((square, key) => {
+  //   square.dataset.index = key.toString();
+  // });
 
   const scoreDisplay = document.getElementById("score") as HTMLSpanElement;
   const startButton = document.getElementById(
     "start-button"
   ) as HTMLButtonElement;
-
-  // Helper add square labels
-  squares.forEach((s, i) => {
-    s.textContent = i.toString();
-  });
 
   // ===== Let's define the dimensions of our grid and Tetrominoes
   // NOTE We have a 10x20 Grid (200 divs) that wrap
@@ -80,9 +83,6 @@ document.addEventListener("DOMContentLoaded", (e) => {
     iTetromino,
   ];
 
-  // === Randomly select a currentPosition on the Grid
-  let currentGridPosition = Math.floor(Math.random() * squares.length);
-
   // === Randomly select a Tetromino and a random rotation
   // Static:
   // let currentTetrominoRotation = tetrominoes[0][0]; // Should match with lTetromino[0] rotation
@@ -90,32 +90,58 @@ document.addEventListener("DOMContentLoaded", (e) => {
   // Random:
   function randomlySelectTetromino() {
     const randomTetromino = Math.floor(Math.random() * tetrominoes.length);
-    console.log("randomTetromino: ", randomTetromino);
-    const randomTetrominoRotation = Math.floor(
+    // console.log("randomTetromino: ", randomTetromino);
+    const randomRotation = Math.floor(
       Math.random() * tetrominoes[randomTetromino].length
     );
-    console.log("randomTetrominoRotation: ", randomTetrominoRotation);
-    // Now let's put them together for the currentTetrominoRotation
-    const currentTetrominoRotation =
-      tetrominoes[randomTetromino][randomTetrominoRotation];
+    // console.log("randomTetrominoRotation: ", randomTetrominoRotation);
+    // Now let's put them together for the selectedTetrominoRotation
+    const selectedTetrominoAndRotation =
+      tetrominoes[randomTetromino][randomRotation];
 
-    const currentTetrominoGridPosition = currentTetrominoRotation.map(
-      (block) => {
-        return block + currentGridPosition;
-      }
-    );
-    console.log(currentTetrominoGridPosition);
+    return selectedTetrominoAndRotation;
   }
 
-  // // Let's put this into a function and add a CSS class of 'tetromino' to give color
-  // function drawTetromino() {
-  //   // Need to find matching/corresponding squares in the grid and add CSS class to each
-  //   // Loop over the array of blocks/dimensions inside currentTetrominoGridPosition
+  function computeTetrominoGridPosition(tetromino: number[]) {
+    // Randomly select a currentPosition on the Grid
+    //const currentGridPosition = Math.floor(Math.random() * squares.length);
+    // TODO Account for grid edges so they don't wrap or go off screen
+    // Random number in range: https://stackoverflow.com/a/1527820/9901949
+    const currentGridPosition = Math.floor(Math.random() * (8 - 1) + 1);
+
+    const currentTetrominoGridPosition = tetromino.map((block) => {
+      return block + currentGridPosition;
+    });
+
+    return currentTetrominoGridPosition;
+  }
+
+  // Let's create a global currentTetromino that we can use to draw/undraw, etc.
+  // NOTE Need to compute only once otherwise a new position will be computed
+  let currentTetromino = computeTetrominoGridPosition(
+    randomlySelectTetromino()
+  );
+
+  function drawTetromino(tetromino: number[]) {
+    console.log("drawTetromino: ", tetromino);
+    // Need to find matching/corresponding squares in the grid and add CSS class to each
+    // Loop over the array of blocks/dimensions inside currentTetrominoGridPosition
+    tetromino.forEach((block) => {
+      squares[block].classList.add("tetromino");
+    });
+  }
+
+  drawTetromino(currentTetromino);
+
+  // function undrawTetromino() {
+  //   const currentTetrominoGridPosition = computeTetrominoGridPosition(
+  //     currentTetromino
+  //   );
+
   //   currentTetrominoGridPosition.forEach((block) => {
-  //     squares[block].classList.add("tetromino");
+  //     squares[block].classList.remove("tetromino");
   //   });
   // }
 
-  // Invoke
-  //drawTetromino();
+  // setTimeout(undrawTetromino, 5000);
 });
