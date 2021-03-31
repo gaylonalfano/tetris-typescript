@@ -102,15 +102,20 @@ document.addEventListener("DOMContentLoaded", (e) => {
     return selectedTetrominoAndRotation;
   }
 
-  function computeTetrominoGridPosition(tetromino: number[]) {
-    // Randomly select a currentPosition on the Grid
-    //const currentGridPosition = Math.floor(Math.random() * squares.length);
-    // TODO Account for grid edges so they don't wrap or go off screen
-    // Random number in range: https://stackoverflow.com/a/1527820/9901949
-    const currentGridPosition = Math.floor(Math.random() * (8 - 1) + 1);
+  // Randomly select a currentPosition on the Grid
+  //const currentGridPosition = Math.floor(Math.random() * squares.length);
+  // TODO Account for grid edges so they don't wrap or go off screen
+  // Random number in range: https://stackoverflow.com/a/1527820/9901949
+  let initialGridPosition = Math.floor(Math.random() * (7 - 1) + 1);
 
+  // NOTE This could actually be computeINITIALTetrominoPosition
+  // since after inits, it goes down by WIDTH until reaches bottom
+  function computeTetrominoGridPosition(
+    tetromino: number[],
+    gridPosition: number = WIDTH
+  ) {
     const currentTetrominoGridPosition = tetromino.map((block) => {
-      return block + currentGridPosition;
+      return block + gridPosition;
     });
 
     return currentTetrominoGridPosition;
@@ -119,7 +124,8 @@ document.addEventListener("DOMContentLoaded", (e) => {
   // Let's create a global currentTetromino that we can use to draw/undraw, etc.
   // NOTE Need to compute only once otherwise a new position will be computed
   let currentTetromino = computeTetrominoGridPosition(
-    randomlySelectTetromino()
+    randomlySelectTetromino(),
+    initialGridPosition
   );
 
   function drawTetromino(tetromino: number[]) {
@@ -133,15 +139,47 @@ document.addEventListener("DOMContentLoaded", (e) => {
 
   drawTetromino(currentTetromino);
 
-  // function undrawTetromino() {
-  //   const currentTetrominoGridPosition = computeTetrominoGridPosition(
-  //     currentTetromino
-  //   );
+  function undrawTetromino(tetromino: number[]) {
+    console.log("undrawTetromino: ", tetromino);
+    tetromino.forEach((block) => {
+      squares[block].classList.remove("tetromino");
+    });
+  }
 
-  //   currentTetrominoGridPosition.forEach((block) => {
-  //     squares[block].classList.remove("tetromino");
-  //   });
-  // }
+  //setTimeout(() => undrawTetromino(currentTetromino), 3000); // works
 
-  // setTimeout(undrawTetromino, 5000);
+  // Need a Timer to keep track and draw/undraw as Tetromino moves
+  const timerId = setInterval(moveDown, 1000);
+
+  function moveDown() {
+    // Needs to take currentTetromino Grid Position and undraw() it
+    undrawTetromino(currentTetromino);
+    // Then recompute the new updated Grid Position (shift down by WIDTH)
+    // currentTetromino = currentTetromino.map((block) => block + WIDTH);
+    // NOTE gripPosition arg is optional (default is WIDTH)
+    currentTetromino = computeTetrominoGridPosition(currentTetromino);
+
+    // FAILED ATTEMPTS
+    // console.log("cgp BEFORE: ", currentGridPosition);
+    // currentGridPosition += WIDTH; // works
+    // console.log("cgp AFTER: ", currentGridPosition);
+
+    // Recompute currentTetromionGridPosition w/ updated currentGridPosition
+    // console.log("ct BEFORE: ", currentTetromino);
+    // let updatedTetrominoGridPosition = computeTetrominoGridPosition(
+    //   currentTetromino,
+    //   currentGridPosition
+    // );
+    // console.log("ct AFTER: ", currentTetromino);
+    // console.log("ut AFTER: ", updatedTetrominoGridPosition);
+    // // Update our currentTetromino values
+    // currentTetromino = updatedTetrominoGridPosition;
+    // console.log(
+    //   "currentTetromino AFTER setting to updatedTetrominoGridPosition, ",
+    //   currentTetromino
+    // );
+
+    // Then draw() the Tetromino at the new Grid Position
+    drawTetromino(currentTetromino);
+  }
 });
