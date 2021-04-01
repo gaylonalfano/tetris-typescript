@@ -5,16 +5,24 @@ document.addEventListener("DOMContentLoaded", (e) => {
   // Grid Size
   const WIDTH = 10;
   const HEIGHT = 20;
-  const GRID_SIZE = WIDTH * HEIGHT;
+  const BOARD_SIZE = WIDTH * HEIGHT;
 
   // DOM Elements
   const grid = document.querySelector(".container-grid") as HTMLDivElement;
   const board = document.querySelector(".container-board") as HTMLElement;
+  const outOfBounds = Array.from(
+    document.querySelectorAll(".oob") as NodeListOf<HTMLElement>
+  ) as Array<HTMLElement>;
+  console.log("outOfBounds: ", outOfBounds);
   // squares as Array<HTMLDivElement>
   const squaresNodeList = document.querySelectorAll(
     ".square"
   ) as NodeListOf<HTMLDivElement>;
-  const squares = Array.from(squaresNodeList);
+  // const squares = Array.from(squaresNodeList); // TS2550 Error about Array.from()
+  // const squares = [...squaresNodeList];  // TS2488 Error
+  const squares = Array.prototype.slice.call(
+    squaresNodeList
+  ) as Array<HTMLDivElement>; // Or, [].slice.call()
 
   // Use data-* attribute to assign each div an index
   squares.forEach((square, index) => {
@@ -22,15 +30,6 @@ document.addEventListener("DOMContentLoaded", (e) => {
     // Add labels to help
     square.textContent = index.toString();
   });
-
-  // squares as NodeListOf<HTMLDivElement>
-  // const squares = document.querySelectorAll(
-  //   ".grid div"
-  // ) as NodeListOf<HTMLDivElement>;
-  // // Use data-* attribute to assign each div an index
-  // squares.forEach((square, key) => {
-  //   square.dataset.index = key.toString();
-  // });
 
   const scoreDisplay = document.getElementById("score") as HTMLSpanElement;
   const startButton = document.getElementById(
@@ -109,17 +108,43 @@ document.addEventListener("DOMContentLoaded", (e) => {
   //const currentGridPosition = Math.floor(Math.random() * squares.length);
   // TODO Account for grid edges so they don't wrap or go off screen
   // Random number in range: https://stackoverflow.com/a/1527820/9901949
-  let initialGridPosition = Math.floor(Math.random() * (7 - 1) + 1);
+  let initialBoardPosition = Math.floor(Math.random() * (7 - 1) + 1);
+  let tetrominoIsOutOfBounds: boolean;
+
+  // Add a function that computes whether in Out-of-bounds
+  function isOutOfBounds(tetromino: number[]): boolean {
+    // Needs a Tetromino Array argument to check if any value is in OOB
+    // My idea is to check whether any value (number/index) is out of board range
+    // We add 'tetromino' class to draw().
+    // Q: Could I just see if any value inside the array of numbers is out of
+    // the range? Or, doesn't have a 'square' class?
+    tetrominoIsOutOfBounds = tetromino.some(
+      (square) => square < 1 || square > BOARD_SIZE
+    );
+    return tetrominoIsOutOfBounds;
+  }
+
+  // TODO Create a helper freeze() method to stop game
+  function freeze() {}
 
   // NOTE This could actually be computeINITIALTetrominoPosition
   // since after inits, it goes down by WIDTH until reaches bottom
   function computeTetrominoGridPosition(
     tetromino: number[],
-    gridPosition: number = WIDTH
+    boardPosition: number = WIDTH
   ) {
     const currentTetrominoGridPosition = tetromino.map((block) => {
-      return block + gridPosition;
+      return block + boardPosition;
     });
+
+    // Add check that Tetromino won't be OOB
+    if (isOutOfBounds(currentTetrominoGridPosition)) {
+      console.log("tetrominoIsOutOfBounds: ", tetrominoIsOutOfBounds);
+      alert("OOB!");
+      // Stop execution
+      // TODO Need to make an type Tetromino { number[] | undefined }??
+      // return;
+    }
 
     return currentTetrominoGridPosition;
   }
@@ -128,7 +153,7 @@ document.addEventListener("DOMContentLoaded", (e) => {
   // NOTE Need to compute only once otherwise a new position will be computed
   let currentTetromino = computeTetrominoGridPosition(
     randomlySelectTetromino(),
-    initialGridPosition
+    initialBoardPosition
   );
 
   function drawTetromino(tetromino: number[]) {
@@ -153,7 +178,12 @@ document.addEventListener("DOMContentLoaded", (e) => {
   //setTimeout(() => undrawTetromino(currentTetromino), 3000); // works
 
   // Need a Timer to keep track and draw/undraw as Tetromino moves
-  // const timerId = setInterval(moveDown, 1000);
+  // const timerId = setInterval(moveDown, 500);
+  const timerId = setInterval(() => {
+    if (!tetrominoIsOutOfBounds) {
+      moveDown();
+    }
+  }, 500);
 
   function moveDown() {
     // Needs to take currentTetromino Grid Position and undraw() it

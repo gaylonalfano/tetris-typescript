@@ -61,6 +61,11 @@
   grid-row: 2 / 3;
 }
 
+.square {
+  width: 20px;
+  height: 20px;
+}
+
 .tetromino {
   background-color: blue;
 }

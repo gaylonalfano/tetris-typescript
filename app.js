@@ -5,27 +5,23 @@ document.addEventListener("DOMContentLoaded", function (e) {
     // Grid Size
     var WIDTH = 10;
     var HEIGHT = 20;
-    var GRID_SIZE = WIDTH * HEIGHT;
+    var BOARD_SIZE = WIDTH * HEIGHT;
     // DOM Elements
     var grid = document.querySelector(".container-grid");
     var board = document.querySelector(".container-board");
+    var outOfBounds = Array.from(document.querySelectorAll(".oob"));
+    console.log("outOfBounds: ", outOfBounds);
     // squares as Array<HTMLDivElement>
     var squaresNodeList = document.querySelectorAll(".square");
-    var squares = Array.from(squaresNodeList);
+    // const squares = Array.from(squaresNodeList); // TS2550 Error about Array.from()
+    // const squares = [...squaresNodeList];  // TS2488 Error
+    var squares = Array.prototype.slice.call(squaresNodeList); // Or, [].slice.call()
     // Use data-* attribute to assign each div an index
     squares.forEach(function (square, index) {
         square.dataset.index = index.toString();
         // Add labels to help
         square.textContent = index.toString();
     });
-    // squares as NodeListOf<HTMLDivElement>
-    // const squares = document.querySelectorAll(
-    //   ".grid div"
-    // ) as NodeListOf<HTMLDivElement>;
-    // // Use data-* attribute to assign each div an index
-    // squares.forEach((square, key) => {
-    //   square.dataset.index = key.toString();
-    // });
     var scoreDisplay = document.getElementById("score");
     var startButton = document.getElementById("start-button");
     // ===== Let's define the dimensions of our grid and Tetrominoes
@@ -89,19 +85,40 @@ document.addEventListener("DOMContentLoaded", function (e) {
     //const currentGridPosition = Math.floor(Math.random() * squares.length);
     // TODO Account for grid edges so they don't wrap or go off screen
     // Random number in range: https://stackoverflow.com/a/1527820/9901949
-    var initialGridPosition = Math.floor(Math.random() * (7 - 1) + 1);
+    var initialBoardPosition = Math.floor(Math.random() * (7 - 1) + 1);
+    var tetrominoIsOutOfBounds;
+    // Add a function that computes whether in Out-of-bounds
+    function isOutOfBounds(tetromino) {
+        // Needs a Tetromino Array argument to check if any value is in OOB
+        // My idea is to check whether any value (number/index) is out of board range
+        // We add 'tetromino' class to draw().
+        // Q: Could I just see if any value inside the array of numbers is out of
+        // the range? Or, doesn't have a 'square' class?
+        tetrominoIsOutOfBounds = tetromino.some(function (square) { return square < 1 || square > BOARD_SIZE; });
+        return tetrominoIsOutOfBounds;
+    }
+    // TODO Create a helper freeze() method to stop game
+    function freeze() { }
     // NOTE This could actually be computeINITIALTetrominoPosition
     // since after inits, it goes down by WIDTH until reaches bottom
-    function computeTetrominoGridPosition(tetromino, gridPosition) {
-        if (gridPosition === void 0) { gridPosition = WIDTH; }
+    function computeTetrominoGridPosition(tetromino, boardPosition) {
+        if (boardPosition === void 0) { boardPosition = WIDTH; }
         var currentTetrominoGridPosition = tetromino.map(function (block) {
-            return block + gridPosition;
+            return block + boardPosition;
         });
+        // Add check that Tetromino won't be OOB
+        if (isOutOfBounds(currentTetrominoGridPosition)) {
+            console.log("tetrominoIsOutOfBounds: ", tetrominoIsOutOfBounds);
+            alert("OOB!");
+            // Stop execution
+            // TODO Need to make an type Tetromino { number[] | undefined }??
+            // return;
+        }
         return currentTetrominoGridPosition;
     }
     // Let's create a global currentTetromino that we can use to draw/undraw, etc.
     // NOTE Need to compute only once otherwise a new position will be computed
-    var currentTetromino = computeTetrominoGridPosition(randomlySelectTetromino(), initialGridPosition);
+    var currentTetromino = computeTetrominoGridPosition(randomlySelectTetromino(), initialBoardPosition);
     function drawTetromino(tetromino) {
         console.log("drawTetromino: ", tetromino);
         // Need to find matching/corresponding squares in the grid and add CSS class to each
@@ -120,7 +137,12 @@ document.addEventListener("DOMContentLoaded", function (e) {
     }
     //setTimeout(() => undrawTetromino(currentTetromino), 3000); // works
     // Need a Timer to keep track and draw/undraw as Tetromino moves
-    // const timerId = setInterval(moveDown, 1000);
+    // const timerId = setInterval(moveDown, 500);
+    var timerId = setInterval(function () {
+        if (!tetrominoIsOutOfBounds) {
+            moveDown();
+        }
+    }, 500);
     function moveDown() {
         // Needs to take currentTetromino Grid Position and undraw() it
         undrawTetromino(currentTetromino);
