@@ -1,16 +1,64 @@
-.grid {
-  width: 200px;
-  height: 400px;
-  display: flex;
-  background-color: yellow;
-  flex-wrap: wrap;
+/* .grid { */
+/*   width: 200px; */
+/*   height: 400px; */
+/*   display: flex; */
+/*   background-color: yellow; */
+/*   flex-wrap: wrap; */
+/* } */
+
+/* .grid div { */
+/*   height: 20px; */
+/*   width: 20px; */
+/*   /1* background-color: red; *1/ */
+/*   /1* border: 1px solid gray; *1/ */
+/* } */
+
+/* Making a inner board of 200px x 400px with 20x20 squares */
+/* Adding extra for the out-of-bounds sections */
+.container-grid {
+  width: 240px;
+  height: 420px;
+  display: grid;
+  grid-template-columns: 20px 1fr 20px;
+  grid-template-rows: 1fr 20px;
+  grid-column-gap: 0px;
+  grid-row-gap: 0px;
+  background-color: grey;
 }
 
-.grid div {
-  height: 20px;
-  width: 20px;
-  /* background-color: red; */
-  /* border: 1px solid gray; */
+.container-board {
+  /* Verbose */
+  /* grid-column-start: 2; */
+  /* grid-column-end: 12; */
+  /* grid-row-start: 1; */
+  /* grid-row-end: 21; */
+  /* Shorthand */
+  /* grid-column: 2 / 12; */
+  /* grid-row: 1 / 21; */
+  /* Even better row-start / col-start / row-end / col-end */
+  display: grid;
+  grid-area: 1 / 2 / 2 / 3;
+  grid-template-columns: repeat(10, 1fr);
+  grid-template-rows: repeat(20, 1fr);
+  background-color: lightseagreen;
+}
+
+.oob {
+  background-color: red;
+}
+
+.left-oob {
+  grid-area: 1 / 1 / 2 / 2;
+}
+
+.right-oob {
+  grid-column: 3 / 4;
+  grid-row: 1 / 2;
+}
+
+.bottom-oob {
+  grid-column: 1 / 4;
+  grid-row: 2 / 3;
 }
 
 .tetromino {

@@ -8,11 +8,14 @@ document.addEventListener("DOMContentLoaded", (e) => {
   const GRID_SIZE = WIDTH * HEIGHT;
 
   // DOM Elements
-  const grid = document.querySelector(".grid") as HTMLDivElement;
+  const grid = document.querySelector(".container-grid") as HTMLDivElement;
+  const board = document.querySelector(".container-board") as HTMLElement;
   // squares as Array<HTMLDivElement>
-  const squares = Array.from(
-    document.querySelectorAll(".grid div")
-  ) as HTMLDivElement[];
+  const squaresNodeList = document.querySelectorAll(
+    ".square"
+  ) as NodeListOf<HTMLDivElement>;
+  const squares = Array.from(squaresNodeList);
+
   // Use data-* attribute to assign each div an index
   squares.forEach((square, index) => {
     square.dataset.index = index.toString();
@@ -137,6 +140,7 @@ document.addEventListener("DOMContentLoaded", (e) => {
     });
   }
 
+  // Draw initial Tetromino onto the grid/board
   drawTetromino(currentTetromino);
 
   function undrawTetromino(tetromino: number[]) {
@@ -149,7 +153,7 @@ document.addEventListener("DOMContentLoaded", (e) => {
   //setTimeout(() => undrawTetromino(currentTetromino), 3000); // works
 
   // Need a Timer to keep track and draw/undraw as Tetromino moves
-  const timerId = setInterval(moveDown, 1000);
+  // const timerId = setInterval(moveDown, 1000);
 
   function moveDown() {
     // Needs to take currentTetromino Grid Position and undraw() it
