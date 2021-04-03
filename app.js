@@ -40,7 +40,7 @@ document.addEventListener("DOMContentLoaded", function (e) {
     // let initialBoardPosition = () => Math.floor(Math.random() * (7 - 1) + 1);
     // Q: Not sure if this var is needed if I have initializeTetromino() function
     // let initialBoardPosition = computeInitialBoardPosition();
-    var tetrominoIsOutOfBounds;
+    // let tetrominoIsOutOfBounds: boolean;
     // Q: How to stop the timer?
     // A: Use clearInterval(timerId) to cancel it
     // Need a Timer to keep track and draw/undraw as Tetromino moves
@@ -120,22 +120,28 @@ document.addEventListener("DOMContentLoaded", function (e) {
         return Math.floor(Math.random() * (7 - 1) + 1);
     }
     // Add a function that computes whether in Out-of-bounds
-    function isOutOfBounds(tetromino) {
+    function hasOutOfBounds(tetromino) {
         // Needs a Tetromino Array argument to check if any value is in OOB
         // My idea is to check whether any value (number/index) is out of board range
         // We add 'tetromino' class to draw().
         // Q: Could I just see if any value inside the array of numbers is out of
         // the range? Or, doesn't have a 'square' class?
-        tetrominoIsOutOfBounds = tetromino.some(function (square) { return square < 1 || square > boardSize; });
-        return tetrominoIsOutOfBounds;
+        return tetromino.some(function (square) { return square < 1 || square > boardSize; });
     }
-    // TODO Create a helper freeze() method to stop game
-    // function freeze() {
-    //   if (tetrominoIsOutOfBounds) {
-    //     // Randomly generate a new Tetromino?
-    //     randomlySelectTetromino();
-    //   }
-    // }
+    // Add a function that computes whether next position has "taken" squares
+    function hasTaken(tetromino) {
+        return tetromino.some(function (square) {
+            return squares[square].classList.contains("taken");
+        });
+    }
+    // Create a helper freezeTetromino() method to freeze in place by adding class="taken"
+    function freezeTetromino(tetromino) {
+        // NOTE Need to redraw the tetromino as well
+        tetromino.forEach(function (square) {
+            squares[square].classList.add("tetromino", "taken");
+            console.log("AFTER freezing: squares[$square].classList:", squares[square].classList);
+        });
+    }
     // NOTE This could actually be computeINITIALTetrominoPosition
     // since after inits, it goes down by width until reaches bottom
     function computeTetrominoGridPosition(tetromino, boardPosition) {
@@ -144,19 +150,34 @@ document.addEventListener("DOMContentLoaded", function (e) {
             return square + boardPosition;
         });
         // Add check that next Tetromino position won't be OOB
-        if (isOutOfBounds(nextTetrominoGridPosition)) {
-            alert("OOB! freezeGame()");
-            freezeGame();
-            // Re-initialize a game
-            console.log("Starting new game...");
-            initializeGame();
+        if (hasOutOfBounds(nextTetrominoGridPosition) ||
+            hasTaken(nextTetrominoGridPosition)) {
+            console.log("OOB || Taken! Freezing tetromino: ", tetromino);
+            // NOTE Freeze the ORIGINAL tetromino, not the nextTetrominoGridPosition
+            // Check the classList BEFORE freezing:
+            tetromino.forEach(function (square) {
+                console.log("BEFORE freezing: squares[$square].classList:", squares[square].classList);
+            });
+            // FIXME Need to redraw to keep frozen piece visible on board. Currently
+            // it gets undrawn FIRST inside moveDown() before doing this compute.
+            // Probably a better way...
+            // UPDATE I added the "tetromino" class along with "taken" inside freezeTetromino()
+            // to reduce the loops.
+            // drawTetromino(tetromino); // Added "tetromino" class inside freezeTetromino()
+            freezeTetromino(tetromino);
+            // Intitialize a new/next Tetromino and update global currentTetromino
+            currentTetromino = initializeTetromino();
+            // NOTE Do not drawTetromino() here as it is called next inside moveDown()
+            return currentTetromino;
         }
-        // Position is not OOB so we can update global currentTetromino
-        currentTetromino = nextTetrominoGridPosition;
-        return currentTetromino;
+        else {
+            // Position is not OOB or Taken so we can update global currentTetromino
+            currentTetromino = nextTetrominoGridPosition;
+            return currentTetromino;
+        }
     }
     function drawTetromino(tetromino) {
-        console.log("drawTetromino: ", tetromino);
+        // console.log("drawTetromino: ", tetromino);
         // Need to find matching/corresponding squares in the grid and add CSS class to each
         // Loop over the array of squares/dimensions inside currentTetrominoGridPosition
         tetromino.forEach(function (square) {
@@ -166,7 +187,7 @@ document.addEventListener("DOMContentLoaded", function (e) {
     // Draw initial Tetromino onto the grid/board
     // drawTetromino(currentTetromino);
     function undrawTetromino(tetromino) {
-        console.log("undrawTetromino: ", tetromino);
+        // console.log("undrawTetromino: ", tetromino);
         tetromino.forEach(function (square) {
             squares[square].classList.remove("tetromino");
         });
@@ -231,13 +252,12 @@ document.addEventListener("DOMContentLoaded", function (e) {
         drawTetromino(currentTetromino);
         // Initiate game timer with interval
         timer = setInterval(moveDown, 500);
-        console.log(timer);
     }
     initializeGame();
     // Function to stop the game and game timer
-    function freezeGame() {
-        gameIsActive = false;
-        clearInterval(timer);
-        // Q: Do I need to reset currentTetromino, tetrominoIsOutOfBounds?
-    }
+    // function freezeGame(): void {
+    //   gameIsActive = false;
+    //   clearInterval(timer);
+    //   // Q: Do I need to reset currentTetromino, tetrominoIsOutOfBounds?
+    // }
 });
