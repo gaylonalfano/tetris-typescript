@@ -27,12 +27,12 @@ document.addEventListener("DOMContentLoaded", (e) => {
   });
 
   const scoreDisplay = document.getElementById("score") as HTMLSpanElement;
-  const startPauseButton = document.getElementById(
-    "start-pause-button"
+  const startStopButton = document.getElementById(
+    "start-stop-button"
   ) as HTMLButtonElement;
 
   // ===== Event Listeners
-  startPauseButton.addEventListener("click", pauseGame);
+  startStopButton.addEventListener("click", stopGame);
 
   // ===== Game Global State
   // Grid Size
@@ -140,6 +140,10 @@ document.addEventListener("DOMContentLoaded", (e) => {
     // Now let's put them together for the selectedTetrominoRotation
     const selectedTetrominoAndRotation =
       tetrominoes[randomTetromino][randomRotation];
+    console.log(
+      "randomlySelectTetromino:selectedTetrominoAndRotation: ",
+      selectedTetrominoAndRotation
+    );
 
     // TODO Check that selected doesn't have OOB or Taken. If so, stop game (it's over)
     // Q: Do I add this check here or inside the initializeTetromino() function?
@@ -167,7 +171,7 @@ document.addEventListener("DOMContentLoaded", (e) => {
     // We add 'tetromino' class to draw().
     // Q: Could I just see if any value inside the array of numbers is out of
     // the range? Or, doesn't have a 'square' class?
-    return tetromino.some((square) => square < 1 || square > boardSize);
+    return tetromino.some((square) => square < 0 || square > boardSize);
   }
 
   // Add a function that computes whether next position has "taken" squares
@@ -209,35 +213,39 @@ document.addEventListener("DOMContentLoaded", (e) => {
       return square + boardPosition;
     });
 
-    // Add check that next Tetromino position won't be OOB
-    if (!isValidTetrominoPosition(nextTetrominoPosition)) {
-      console.log("OOB || Taken! Freezing tetromino: ", tetromino);
-      // NOTE Freeze the ORIGINAL tetromino, not the nextTetrominoPosition
-      // Check the classList BEFORE freezing:
-      tetromino.forEach((square) => {
-        console.log(
-          `BEFORE freezing: squares[$square].classList:`,
-          squares[square].classList
-        );
-      });
-      // FIXME Need to redraw to keep frozen piece visible on board. Currently
-      // it gets undrawn FIRST inside moveDown() before doing this compute.
-      // Probably a better way...
-      // UPDATE I added the "tetromino" class along with "taken" inside freezeTetromino()
-      // to reduce the loops.
-      // drawTetromino(tetromino); // Added "tetromino" class inside freezeTetromino()
-      freezeTetromino(tetromino);
-      // Intitialize a new/next Tetromino and update global currentTetromino
-      // currentTetromino = initializeTetromino();
-      initializeTetromino();
-      // NOTE Do not drawTetromino() here as it is called next inside moveDown()
-      return currentTetromino;
-    } else {
-      // Position is not OOB or Taken so we can update global currentTetromino
-      currentTetromino = nextTetrominoPosition;
+    // TODO
+    // UPDATE Moving this validation check to ...where???
+    // // Add check that next Tetromino position won't be OOB
+    // if (!isValidTetrominoPosition(nextTetrominoPosition)) {
+    //   console.log("OOB || Taken! Freezing tetromino: ", tetromino);
+    //   // NOTE Freeze the ORIGINAL tetromino, not the nextTetrominoPosition
+    //   // Check the classList BEFORE freezing:
+    //   tetromino.forEach((square) => {
+    //     console.log(
+    //       `BEFORE freezing: squares[$square].classList:`,
+    //       squares[square].classList
+    //     );
+    //   });
+    //   // FIXME Need to redraw to keep frozen piece visible on board. Currently
+    //   // it gets undrawn FIRST inside moveDown() before doing this compute.
+    //   // Probably a better way...
+    //   // UPDATE I added the "tetromino" class along with "taken" inside freezeTetromino()
+    //   // to reduce the loops.
+    //   // drawTetromino(tetromino); // Added "tetromino" class inside freezeTetromino()
+    //   freezeTetromino(tetromino);
+    //   // Intitialize a new/next Tetromino and update global currentTetromino
+    //   // currentTetromino = initializeTetromino();
+    //   initializeTetromino();
+    //   // NOTE Do not drawTetromino() here as it is called next inside moveDown()
+    //   return currentTetromino;
+    // } else {
+    //   // Position is not OOB or Taken so we can update global currentTetromino
+    //   currentTetromino = nextTetrominoPosition;
 
-      return currentTetromino;
-    }
+    //   return currentTetromino;
+    // }
+
+    return nextTetrominoPosition;
   }
 
   function drawTetromino(tetromino: number[]) {
@@ -262,6 +270,7 @@ document.addEventListener("DOMContentLoaded", (e) => {
   //setTimeout(() => undrawTetromino(currentTetromino), 3000); // works
 
   function moveDown() {
+    console.log("moveDown:currentTetromino:BEFORE ", currentTetromino);
     // Needs to take currentTetromino Grid Position and undraw() it
     undrawTetromino(currentTetromino);
     // Then recompute the new updated Grid Position (shift down by width)
@@ -281,15 +290,32 @@ document.addEventListener("DOMContentLoaded", (e) => {
     // be used inside the next drawTetromino(currentTetromino)
     // Q: Should I use a try/catch here in case it computes to OOB?
     try {
-      computeTetrominoNextPosition(currentTetromino);
-      // Then draw() the Tetromino at the new Grid Position
-      drawTetromino(currentTetromino);
+      let tetrominoNextPosition = computeTetrominoNextPosition(
+        currentTetromino
+      );
+
+      if (isValidTetrominoPosition(tetrominoNextPosition)) {
+        // Update the global currentTetromino
+        currentTetromino = tetrominoNextPosition;
+        // Then draw() the Tetromino at the new Grid Position
+        drawTetromino(currentTetromino);
+      } else {
+        // Freeze ORIGINAL Tetromino in place
+        freezeTetromino(currentTetromino);
+        // Re-init next Tetromino if valid and update global currentTetromino
+        initializeTetromino();
+        // Draw this new Tetromino (stored in global currentTetromino)
+        drawTetromino(currentTetromino);
+      }
+      console.log("moveDown:currentTetromino:AFTER ", currentTetromino);
     } catch (error) {
       console.log(error);
     }
 
+    // Q: This needed since I'm doing the check inside initializeTetromino()
+    // and stopping the game if it's not valid?
     // Add stopGame() to check
-    stopGame();
+    // stopGame();
   }
 
   // Need a function that initializeTetromino (not the GAME, just Tetromino)
@@ -301,6 +327,14 @@ document.addEventListener("DOMContentLoaded", (e) => {
       let selectedTetrominoAndRotation: number[] = randomlySelectTetromino();
 
       if (isValidTetrominoPosition(selectedTetrominoAndRotation)) {
+        console.log(
+          "initializeTetromino:selectedTetrominoAndRotation: ",
+          selectedTetrominoAndRotation
+        );
+        console.log(
+          "initializeTetromino:isValidTetrominoPosition(): ",
+          isValidTetrominoPosition(selectedTetrominoAndRotation)
+        );
         let tetrominoNextPosition = computeTetrominoNextPosition(
           selectedTetrominoAndRotation,
           computeInitialBoardPosition()
@@ -309,6 +343,8 @@ document.addEventListener("DOMContentLoaded", (e) => {
         if (isValidTetrominoPosition(tetrominoNextPosition)) {
           // Only now do we update the global currentTetromino with this new value
           currentTetromino = tetrominoNextPosition;
+          // Q: Draw to the board? Or draw inside moveDown()?
+          // A: Gonna draw inside moveDown() to be more explicit.
         } else {
           console.log(
             "The randomly selected Tetromino was okay but NOT the potential after computing position"
@@ -359,25 +395,25 @@ document.addEventListener("DOMContentLoaded", (e) => {
   startGame();
 
   // Handler for the click event on the button
-  function pauseGame(): void {
-    console.log("pauseGame triggered");
+  function stopGame(): void {
+    console.log("stopGame triggered");
     clearInterval(timer);
     timer = 0; // Ensure we've cleared the interval
     gameIsActive = false;
   }
 
   // Function to stop the game and game timer
-  function stopGame(): void {
-    // Need some conditions to check
-    const topRow: HTMLDivElement[] = squares.slice(0, 9);
-    // console.log("topRow:", topRow);
-    const topRowAllTaken: boolean = topRow.every((row) =>
-      row.classList.contains("taken")
-    );
+  // function stopGameWithConditions(): void {
+  //   // Need some conditions to check
+  //   const topRow: HTMLDivElement[] = squares.slice(0, 9);
+  //   // console.log("topRow:", topRow);
+  //   const topRowAllTaken: boolean = topRow.every((row) =>
+  //     row.classList.contains("taken")
+  //   );
 
-    if (topRowAllTaken || !gameIsActive) {
-      gameIsActive = false;
-      clearInterval(timer);
-    }
-  }
+  //   if (topRowAllTaken || !gameIsActive) {
+  //     gameIsActive = false;
+  //     clearInterval(timer);
+  //   }
+  // }
 });
