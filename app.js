@@ -22,6 +22,7 @@ document.addEventListener("DOMContentLoaded", function (e) {
     var startStopButton = document.getElementById("start-stop-button");
     // ===== Event Listeners
     startStopButton.addEventListener("click", stopGame);
+    document.addEventListener("keyup", control);
     // ===== Game Global State
     // Grid Size
     var width = 10;
@@ -167,15 +168,15 @@ document.addEventListener("DOMContentLoaded", function (e) {
     // since after inits, it goes down by width until reaches bottom
     function computeTetrominoNextPosition(tetromino, boardPosition) {
         if (boardPosition === void 0) { boardPosition = width; }
-        var nextTetrominoPosition = tetromino.map(function (square) {
+        var tetrominoNextPosition = tetromino.map(function (square) {
             return square + boardPosition;
         });
         // TODO
         // UPDATE Moving this validation check to ...where???
         // // Add check that next Tetromino position won't be OOB
-        // if (!isValidTetrominoPosition(nextTetrominoPosition)) {
+        // if (!isValidTetrominoPosition(tetrominoNextPosition)) {
         //   console.log("OOB || Taken! Freezing tetromino: ", tetromino);
-        //   // NOTE Freeze the ORIGINAL tetromino, not the nextTetrominoPosition
+        //   // NOTE Freeze the ORIGINAL tetromino, not the tetrominoNextPosition
         //   // Check the classList BEFORE freezing:
         //   tetromino.forEach((square) => {
         //     console.log(
@@ -197,10 +198,10 @@ document.addEventListener("DOMContentLoaded", function (e) {
         //   return currentTetromino;
         // } else {
         //   // Position is not OOB or Taken so we can update global currentTetromino
-        //   currentTetromino = nextTetrominoPosition;
+        //   currentTetromino = tetrominoNextPosition;
         //   return currentTetromino;
         // }
-        return nextTetrominoPosition;
+        return tetrominoNextPosition;
     }
     function drawTetromino(tetromino) {
         // console.log("drawTetromino: ", tetromino);
@@ -219,6 +220,29 @@ document.addEventListener("DOMContentLoaded", function (e) {
         });
     }
     //setTimeout(() => undrawTetromino(currentTetromino), 3000); // works
+    function control(e) {
+        // Going to listen for certain KeyboardEvents to move the Tetromino
+        console.log(e.key);
+        console.log(e.code);
+        if (e.key === "ArrowLeft") {
+            moveLeft();
+        }
+        else if (e.key === "ArrowRight") {
+            moveRight();
+        }
+        else if (e.key === "ArrowUp") {
+            // rotate()
+        }
+        else if (e.key === "ArrowDown") {
+            moveDown();
+        }
+    }
+    /*
+     * This is the moveDown() multiline comment.
+     * It moves the currentTetromino down by the
+     * board width value.
+     *
+     */
     function moveDown() {
         console.log("moveDown:currentTetromino:BEFORE ", currentTetromino);
         // Needs to take currentTetromino Grid Position and undraw() it
@@ -253,6 +277,7 @@ document.addEventListener("DOMContentLoaded", function (e) {
                 // Re-init next Tetromino if valid and update global currentTetromino
                 initializeTetromino();
                 // Draw this new Tetromino (stored in global currentTetromino)
+                // NOTE Technically I could remove the drawTetromino() call outside of if/else
                 drawTetromino(currentTetromino);
             }
             console.log("moveDown:currentTetromino:AFTER ", currentTetromino);
@@ -262,8 +287,54 @@ document.addEventListener("DOMContentLoaded", function (e) {
         }
         // Q: This needed since I'm doing the check inside initializeTetromino()
         // and stopping the game if it's not valid?
+        // A: Nope! Don't need to make this redundant call.
         // Add stopGame() to check
         // stopGame();
+    }
+    /*
+     * This is the moveLeft() multiline comment.
+     * @param
+     *
+     */
+    function moveLeft() {
+        // Clear currentTetromino from board
+        undrawTetromino(currentTetromino);
+        // Define the left edge (not OOB since it's outside of the grid)
+        var isAtLeftEdge = currentTetromino.some(function (square) { return square % width === 0; });
+        if (!isAtLeftEdge) {
+            // Check whether the next position shifted left by one square is valid
+            var tetrominoNextPosition = computeTetrominoNextPosition(currentTetromino, -1);
+            console.log("moveLeft:tetrominoNextPosition: ", tetrominoNextPosition);
+            // Q: Need to add a validation check?
+            // A: Think so as it could collide with 'taken' or 'oob' squares
+            if (isValidTetrominoPosition(tetrominoNextPosition)) {
+                currentTetromino = tetrominoNextPosition;
+                drawTetromino(currentTetromino);
+            }
+        }
+        // Originally/already at left edge so just draw
+        drawTetromino(currentTetromino);
+    }
+    function moveRight() {
+        // Clear currentTetromino from board
+        undrawTetromino(currentTetromino);
+        // Define the right edge (not OOB since it's outside of the grid)
+        var isAtRightEdge = currentTetromino.some(function (square) { return (square + 1) % width === 0; }
+        // Or, square % width === width - 1
+        );
+        if (!isAtRightEdge) {
+            // Check whether the next position shifted right by one square is valid
+            var tetrominoNextPosition = computeTetrominoNextPosition(currentTetromino, 1);
+            console.log("moveLeft:tetrominoNextPosition: ", tetrominoNextPosition);
+            // Q: Need to add a validation check?
+            // A: Think so as it could collide with 'taken' or 'oob' squares
+            if (isValidTetrominoPosition(tetrominoNextPosition)) {
+                currentTetromino = tetrominoNextPosition;
+                drawTetromino(currentTetromino);
+            }
+        }
+        // Originally/already at right edge so just draw
+        drawTetromino(currentTetromino);
     }
     // Need a function that initializeTetromino (not the GAME, just Tetromino)
     function initializeTetromino() {
