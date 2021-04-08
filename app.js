@@ -37,6 +37,8 @@ document.addEventListener("DOMContentLoaded", function (e) {
     //   initialBoardPosition
     // );
     var currentTetromino;
+    var tetrominoIndex = 0; // Only 5 different Tetrominoes
+    var rotationIndex = 0; // Only max of 4 rotations depending on Tetromino
     // Let's keep track of previousTetromino as well
     var previousTetromino;
     // NOTE Or, I could use Arrow function to have a variable to pass around
@@ -112,8 +114,11 @@ document.addEventListener("DOMContentLoaded", function (e) {
         // console.log("randomTetromino: ", randomTetromino);
         var randomRotation = Math.floor(Math.random() * tetrominoes[randomTetromino].length);
         // console.log("randomTetrominoRotation: ", randomTetrominoRotation);
+        // Let's update the global tetrominoIndex and rotationIndex numbers for rotate()
+        tetrominoIndex = randomTetromino;
+        rotationIndex = randomRotation;
         // Now let's put them together for the selectedTetrominoRotation
-        var selectedTetrominoAndRotation = tetrominoes[randomTetromino][randomRotation];
+        var selectedTetrominoAndRotation = tetrominoes[randomTetromino][randomRotation]; // Or, randomRotation if we want
         console.log("randomlySelectTetromino:selectedTetrominoAndRotation: ", selectedTetrominoAndRotation);
         // TODO Check that selected doesn't have OOB or Taken. If so, stop game (it's over)
         // Q: Do I add this check here or inside the initializeTetromino() function?
@@ -231,11 +236,42 @@ document.addEventListener("DOMContentLoaded", function (e) {
             moveRight();
         }
         else if (e.key === "ArrowUp") {
-            // rotate()
+            rotate();
         }
         else if (e.key === "ArrowDown") {
             moveDown();
         }
+    }
+    function rotate() {
+        // Let's get the max value of the currentTetromino before rotating
+        // Q: How to get max value in array?
+        // A: Use Math.max(...array) where array: number[]
+        // Q: How to round down to nearest tens position?
+        // A: Use Math.floor(number / 10) * 10  (Math.round or Math.ceil for rounding up)
+        var currentRow = Math.floor(Math.max.apply(Math, currentTetromino) / 10) * 10;
+        console.log("rotate:currentRow: ", currentRow); // 129 -> 120
+        var currentRowCeil = Math.ceil(Math.max.apply(Math, currentTetromino) / 10) * 10;
+        console.log("rotate:currentRowCeil: ", currentRowCeil); // 129 -> 130
+        var currentColumn = Math.max.apply(Math, currentTetromino) % width;
+        console.log("rotate:currentColumn: ", currentColumn);
+        // Undraw the original tetromino as we're about to rotate and redraw
+        console.log("rotate:currentTetromino:BEFORE: ", currentTetromino);
+        // console.log("rotate:timer:BEFORE: ", timer); // 10 Same as AFTER
+        undrawTetromino(currentTetromino);
+        rotationIndex++;
+        if (rotationIndex === currentTetromino.length) {
+            // Need to increment ++ rotationIndex. If 3 then reset to 0
+            rotationIndex = 0;
+        }
+        // Update global currentTetromino value with new rotation
+        // but retain the tetrominoIndex out of tetrominoes array
+        var tetrominoNextRotation = tetrominoes[tetrominoIndex][rotationIndex];
+        console.log("rotate:tetrominoNextRotation:AFTER: ", tetrominoNextRotation);
+        // console.log("rotate:timer:BEFORE: ", timer); // 10 Same as BEFORE
+        // FIXME Need to compute the next position by adding currentRow and currentColumn to updated currentTetromino
+        currentTetromino = tetrominoNextRotation.map(function (square) { return square + currentRow + currentColumn; });
+        console.log("rotate:currentTetromino:AFTER: ", currentTetromino);
+        drawTetromino(currentTetromino);
     }
     /*
      * This is the moveDown() multiline comment.

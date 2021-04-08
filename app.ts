@@ -51,6 +51,8 @@ document.addEventListener("DOMContentLoaded", (e) => {
   //   initialBoardPosition
   // );
   let currentTetromino: number[];
+  let tetrominoIndex: number = 0; // Only 5 different Tetrominoes
+  let rotationIndex: number = 0; // Only max of 4 rotations depending on Tetromino
 
   // Let's keep track of previousTetromino as well
   let previousTetromino: number[];
@@ -138,9 +140,12 @@ document.addEventListener("DOMContentLoaded", (e) => {
       Math.random() * tetrominoes[randomTetromino].length
     );
     // console.log("randomTetrominoRotation: ", randomTetrominoRotation);
+    // Let's update the global tetrominoIndex and rotationIndex numbers for rotate()
+    tetrominoIndex = randomTetromino;
+    rotationIndex = randomRotation;
     // Now let's put them together for the selectedTetrominoRotation
     const selectedTetrominoAndRotation =
-      tetrominoes[randomTetromino][randomRotation];
+      tetrominoes[randomTetromino][randomRotation]; // Or, randomRotation if we want
     console.log(
       "randomlySelectTetromino:selectedTetrominoAndRotation: ",
       selectedTetrominoAndRotation
@@ -172,12 +177,12 @@ document.addEventListener("DOMContentLoaded", (e) => {
     // We add 'tetromino' class to draw().
     // Q: Could I just see if any value inside the array of numbers is out of
     // the range? Or, doesn't have a 'square' class?
-    return tetromino.some((square) => square < 0 || square > boardSize);
+    return tetromino.some((square: number) => square < 0 || square > boardSize);
   }
 
   // Add a function that computes whether next position has "taken" squares
   function hasTaken(tetromino: number[]) {
-    return tetromino.some((square) =>
+    return tetromino.some((square: number) =>
       squares[square].classList.contains("taken")
     );
   }
@@ -195,7 +200,7 @@ document.addEventListener("DOMContentLoaded", (e) => {
   // Create a helper freezeTetromino() method to freeze in place by adding class="taken"
   function freezeTetromino(tetromino: number[]) {
     // NOTE Need to redraw the tetromino as well
-    tetromino.forEach((square) => {
+    tetromino.forEach((square: number) => {
       squares[square].classList.add("tetromino", "taken");
       console.log(
         `AFTER freezing: squares[$square].classList:`,
@@ -210,7 +215,7 @@ document.addEventListener("DOMContentLoaded", (e) => {
     tetromino: number[],
     boardPosition: number = width
   ) {
-    const tetrominoNextPosition = tetromino.map((square) => {
+    const tetrominoNextPosition = tetromino.map((square: number) => {
       return square + boardPosition;
     });
 
@@ -253,7 +258,7 @@ document.addEventListener("DOMContentLoaded", (e) => {
     // console.log("drawTetromino: ", tetromino);
     // Need to find matching/corresponding squares in the grid and add CSS class to each
     // Loop over the array of squares/dimensions inside currentTetrominoGridPosition
-    tetromino.forEach((square) => {
+    tetromino.forEach((square: number) => {
       squares[square].classList.add("tetromino");
     });
   }
@@ -279,10 +284,46 @@ document.addEventListener("DOMContentLoaded", (e) => {
     } else if (e.key === "ArrowRight") {
       moveRight();
     } else if (e.key === "ArrowUp") {
-      // rotate()
+      rotate();
     } else if (e.key === "ArrowDown") {
       moveDown();
     }
+  }
+
+  function rotate(): void {
+    // Let's get the max value of the currentTetromino before rotating
+    // Q: How to get max value in array?
+    // A: Use Math.max(...array) where array: number[]
+    // Q: How to round down to nearest tens position?
+    // A: Use Math.floor(number / 10) * 10  (Math.round or Math.ceil for rounding up)
+    let currentRow: number =
+      Math.floor(Math.max(...currentTetromino) / 10) * 10;
+    console.log("rotate:currentRow: ", currentRow); // 129 -> 120
+    let currentRowCeil: number =
+      Math.ceil(Math.max(...currentTetromino) / 10) * 10;
+    console.log("rotate:currentRowCeil: ", currentRowCeil); // 129 -> 130
+    let currentColumn: number = Math.max(...currentTetromino) % width;
+    console.log("rotate:currentColumn: ", currentColumn);
+    // Undraw the original tetromino as we're about to rotate and redraw
+    console.log("rotate:currentTetromino:BEFORE: ", currentTetromino);
+    // console.log("rotate:timer:BEFORE: ", timer); // 10 Same as AFTER
+    undrawTetromino(currentTetromino);
+    rotationIndex++;
+    if (rotationIndex === currentTetromino.length) {
+      // Need to increment ++ rotationIndex. If 3 then reset to 0
+      rotationIndex = 0;
+    }
+    // Update global currentTetromino value with new rotation
+    // but retain the tetrominoIndex out of tetrominoes array
+    let tetrominoNextRotation = tetrominoes[tetrominoIndex][rotationIndex];
+    console.log("rotate:tetrominoNextRotation:AFTER: ", tetrominoNextRotation);
+    // console.log("rotate:timer:BEFORE: ", timer); // 10 Same as BEFORE
+    // FIXME Need to compute the next position by adding currentRow and currentColumn to updated currentTetromino
+    currentTetromino = tetrominoNextRotation.map(
+      (square: number) => square + currentRow + currentColumn
+    );
+    console.log("rotate:currentTetromino:AFTER: ", currentTetromino);
+    drawTetromino(currentTetromino);
   }
 
   /*
@@ -379,7 +420,7 @@ document.addEventListener("DOMContentLoaded", (e) => {
     undrawTetromino(currentTetromino);
     // Define the right edge (not OOB since it's outside of the grid)
     const isAtRightEdge: boolean = currentTetromino.some(
-      (square) => (square + 1) % width === 0
+      (square: number) => (square + 1) % width === 0
       // Or, square % width === width - 1
     );
 
