@@ -48,19 +48,21 @@ document.addEventListener("DOMContentLoaded", (e) => {
   // NOTE Need to compute only once otherwise a new position will be computed
   // let currentTetromino = computeTetrominoNextPosition(
   //   randomlySelectTetromino(),
-  //   initialBoardPosition
+  //   initialBoardIndex
   // );
-  let currentTetromino: number[];
   let tetrominoIndex: number = 0; // Only 5 different Tetrominoes
   let rotationIndex: number = 0; // Only max of 4 rotations depending on Tetromino
+  let selectedTetrominoAndRotation: number[]; // To help with rotating used with currentBoardIndex
+  let currentBoardIndex: number = 4; // To keep track of where on board. Hardcode instead of random
+  let currentTetromino: number[];
 
   // Let's keep track of previousTetromino as well
   let previousTetromino: number[];
 
   // NOTE Or, I could use Arrow function to have a variable to pass around
-  // let initialBoardPosition = () => Math.floor(Math.random() * (7 - 1) + 1);
+  // let initialBoardIndex = () => Math.floor(Math.random() * (7 - 1) + 1);
   // Q: Not sure if this var is needed if I have initializeTetromino() function
-  // let initialBoardPosition = computeInitialBoardPosition();
+  // let initialBoardIndex = computeInitialBoardIndex();
   // let tetrominoIsOutOfBounds: boolean;
 
   // Q: How to stop the timer?
@@ -146,10 +148,10 @@ document.addEventListener("DOMContentLoaded", (e) => {
     // Now let's put them together for the selectedTetrominoRotation
     const selectedTetrominoAndRotation =
       tetrominoes[randomTetromino][randomRotation]; // Or, randomRotation if we want
-    console.log(
-      "randomlySelectTetromino:selectedTetrominoAndRotation: ",
-      selectedTetrominoAndRotation
-    );
+    // console.log(
+    //   "randomlySelectTetromino:selectedTetrominoAndRotation: ",
+    //   selectedTetrominoAndRotation
+    // );
 
     // TODO Check that selected doesn't have OOB or Taken. If so, stop game (it's over)
     // Q: Do I add this check here or inside the initializeTetromino() function?
@@ -166,9 +168,10 @@ document.addEventListener("DOMContentLoaded", (e) => {
   //const currentGridPosition = Math.floor(Math.random() * squares.length);
   // TODO Account for grid edges so they don't wrap or go off screen
   // Random number in range: https://stackoverflow.com/a/1527820/9901949
-  function computeInitialBoardPosition() {
-    return Math.floor(Math.random() * (7 - 1) + 1);
-  }
+  // UPDATE Going to set currentBoardIndex = 4 from the beginning instead of random
+  // function computeInitialBoardIndex() {
+  //   return Math.floor(Math.random() * (7 - 1) + 1);
+  // }
 
   // Add a function that computes whether in Out-of-bounds
   function hasOutOfBounds(tetromino: number[]): boolean {
@@ -212,11 +215,11 @@ document.addEventListener("DOMContentLoaded", (e) => {
   // NOTE This could actually be computeINITIALTetrominoPosition
   // since after inits, it goes down by width until reaches bottom
   function computeTetrominoNextPosition(
-    tetromino: number[],
-    boardPosition: number = width
+    tetromino: number[] = selectedTetrominoAndRotation,
+    boardIndex: number = currentBoardIndex
   ) {
     const tetrominoNextPosition = tetromino.map((square: number) => {
-      return square + boardPosition;
+      return square + boardIndex;
     });
 
     // TODO
@@ -291,6 +294,7 @@ document.addEventListener("DOMContentLoaded", (e) => {
   }
 
   function rotate(): void {
+    undrawTetromino(currentTetromino);
     // Let's get the max value of the currentTetromino before rotating
     // Q: How to get max value in array?
     // A: Use Math.max(...array) where array: number[]
@@ -298,42 +302,43 @@ document.addEventListener("DOMContentLoaded", (e) => {
     // A: Use Math.floor(number / 10) * 10  (Math.round or Math.ceil for rounding up)
     let currentRow: number =
       Math.floor(Math.max(...currentTetromino) / 10) * 10;
-    console.log("rotate:currentRow: ", currentRow); // 129 -> 120
-    let currentRowCeil: number =
-      Math.ceil(Math.max(...currentTetromino) / 10) * 10;
-    console.log("rotate:currentRowCeil: ", currentRowCeil); // 129 -> 130
+    // console.log("rotate:currentRow: ", currentRow); // 129 -> 120
+    // let currentRowCeil: number =
+    //   Math.ceil(Math.max(...currentTetromino) / 10) * 10;
+    // console.log("rotate:currentRowCeil: ", currentRowCeil); // 129 -> 130
     let currentColumn: number = Math.max(...currentTetromino) % width;
-    console.log("rotate:currentColumn: ", currentColumn);
+    // console.log("rotate:currentColumn: ", currentColumn);
     // Undraw the original tetromino as we're about to rotate and redraw
-    console.log("rotate:currentTetromino:BEFORE: ", currentTetromino);
+    // console.log("rotate:currentTetromino:BEFORE: ", currentTetromino);
     // console.log("rotate:timer:BEFORE: ", timer); // 10 Same as AFTER
-    undrawTetromino(currentTetromino);
     rotationIndex++;
     if (rotationIndex === currentTetromino.length) {
       // Need to increment ++ rotationIndex. If 3 then reset to 0
       rotationIndex = 0;
     }
+
     // Update global currentTetromino value with new rotation
     // but retain the tetrominoIndex out of tetrominoes array
     let tetrominoNextRotation = tetrominoes[tetrominoIndex][rotationIndex];
-    console.log("rotate:tetrominoNextRotation:AFTER: ", tetrominoNextRotation);
+    // console.log("rotate:tetrominoNextRotation: ", tetrominoNextRotation);
     // console.log("rotate:timer:BEFORE: ", timer); // 10 Same as BEFORE
-    // FIXME Need to compute the next position by adding currentRow and currentColumn to updated currentTetromino
-    currentTetromino = tetrominoNextRotation.map(
+    let tetrominoNextPosition = tetrominoNextRotation.map(
       (square: number) => square + currentRow + currentColumn
     );
-    console.log("rotate:currentTetromino:AFTER: ", currentTetromino);
+    // console.log("rotate:tetrominoNextPosition: ", tetrominoNextPosition);
+
+    // TODO Validate this new position before drawing
+    if (isValidTetrominoPosition(tetrominoNextPosition)) {
+      // Update global currentTetromino
+      currentTetromino = tetrominoNextPosition;
+    }
+
     drawTetromino(currentTetromino);
   }
 
-  /*
-   * This is the moveDown() multiline comment.
-   * It moves the currentTetromino down by the
-   * board width value.
-   *
-   */
   function moveDown() {
     console.log("moveDown:currentTetromino:BEFORE ", currentTetromino);
+    console.log("moveDown:currentBoardIndex:BEFORE ", currentBoardIndex);
     // Needs to take currentTetromino Grid Position and undraw() it
     undrawTetromino(currentTetromino);
     // Then recompute the new updated Grid Position (shift down by width)
@@ -353,8 +358,18 @@ document.addEventListener("DOMContentLoaded", (e) => {
     // be used inside the next drawTetromino(currentTetromino)
     // Q: Should I use a try/catch here in case it computes to OOB?
     try {
+      // Update currentBoardIndex by width
+      currentBoardIndex += width;
+      console.log("moveDown:currentBoardIndex:AFTER ", currentBoardIndex);
+
+      // Compute next position using currentTetromino
+      // let tetrominoNextPosition = computeTetrominoNextPosition(
+      //   currentTetromino
+      // );
+      // Compute next position using selectedTetrominoAndRotation + currentBoardIndex
       let tetrominoNextPosition = computeTetrominoNextPosition(
-        currentTetromino
+        selectedTetrominoAndRotation,
+        currentBoardIndex
       );
 
       if (isValidTetrominoPosition(tetrominoNextPosition)) {
@@ -397,6 +412,8 @@ document.addEventListener("DOMContentLoaded", (e) => {
     );
 
     if (!isAtLeftEdge) {
+      // Decrement currentBoardIndex
+      currentBoardIndex -= 1;
       // Check whether the next position shifted left by one square is valid
       let tetrominoNextPosition = computeTetrominoNextPosition(
         currentTetromino,
@@ -408,6 +425,9 @@ document.addEventListener("DOMContentLoaded", (e) => {
       if (isValidTetrominoPosition(tetrominoNextPosition)) {
         currentTetromino = tetrominoNextPosition;
         drawTetromino(currentTetromino);
+      } else {
+        // Revert currentBoardIndex to previous value (go right one)
+        currentBoardIndex += 1;
       }
     }
 
@@ -425,6 +445,8 @@ document.addEventListener("DOMContentLoaded", (e) => {
     );
 
     if (!isAtRightEdge) {
+      // Decrement currentBoardIndex
+      currentBoardIndex += 1;
       // Check whether the next position shifted right by one square is valid
       let tetrominoNextPosition = computeTetrominoNextPosition(
         currentTetromino,
@@ -436,6 +458,9 @@ document.addEventListener("DOMContentLoaded", (e) => {
       if (isValidTetrominoPosition(tetrominoNextPosition)) {
         currentTetromino = tetrominoNextPosition;
         drawTetromino(currentTetromino);
+      } else {
+        // Revert currentBoardIndex to previous value (go left one)
+        currentBoardIndex -= 1;
       }
     }
 
@@ -445,11 +470,15 @@ document.addEventListener("DOMContentLoaded", (e) => {
 
   // Need a function that initializeTetromino (not the GAME, just Tetromino)
   function initializeTetromino() {
+    // Reset the currentBoardIndex back to 4
+    currentBoardIndex = 4;
     // Init and/or update global currentTetromino
     try {
       // UPDATE Need to possibly try/catch since added a isValidTetrominoPosition check
       // inside randomlySelectTetromino().
-      let selectedTetrominoAndRotation: number[] = randomlySelectTetromino();
+      // let selectedTetrominoAndRotation: number[] = randomlySelectTetromino();
+      // Use global instead:
+      selectedTetrominoAndRotation = randomlySelectTetromino();
 
       if (isValidTetrominoPosition(selectedTetrominoAndRotation)) {
         console.log(
@@ -460,9 +489,18 @@ document.addEventListener("DOMContentLoaded", (e) => {
           "initializeTetromino:isValidTetrominoPosition(): ",
           isValidTetrominoPosition(selectedTetrominoAndRotation)
         );
+
         let tetrominoNextPosition = computeTetrominoNextPosition(
           selectedTetrominoAndRotation,
-          computeInitialBoardPosition()
+          currentBoardIndex
+        );
+        console.log(
+          "initializeTetromino:currentBoardIndex: ",
+          currentBoardIndex
+        );
+        console.log(
+          "initializeTetromino:tetrominoNextPosition: ",
+          tetrominoNextPosition
         );
         // Check whether this is also valid after its been repositioned
         if (isValidTetrominoPosition(tetrominoNextPosition)) {
