@@ -20,6 +20,12 @@ document.addEventListener("DOMContentLoaded", function (e) {
     });
     var scoreDisplay = document.getElementById("score");
     var startStopButton = document.getElementById("start-stop-button");
+    var upNextGrid = document.querySelector(".container-up-next-grid");
+    var upNextSquaresNodeList = document.querySelectorAll(".up-next-square");
+    var upNextSquares = Array.from(upNextSquaresNodeList);
+    upNextSquares.forEach(function (square, index) {
+        square.textContent = index.toString();
+    });
     // ===== Event Listeners
     startStopButton.addEventListener("click", stopGame);
     document.addEventListener("keyup", control);
@@ -28,6 +34,9 @@ document.addEventListener("DOMContentLoaded", function (e) {
     var width = 10;
     var height = 20;
     var boardSize = width * height;
+    // upNext Grid Size
+    var upNextGridWidth = 4;
+    var upNextGridHeight = 4;
     // Global game state
     var gameIsActive;
     // Let's create a global currentTetromino that we can use to draw/undraw, etc.
@@ -38,6 +47,7 @@ document.addEventListener("DOMContentLoaded", function (e) {
     // );
     var tetrominoIndex = 0; // Only 5 different Tetrominoes
     var rotationIndex = 0; // Only max of 4 rotations depending on Tetromino
+    var upNextTetrominoIndex = 0; // Added when upNextTetromino
     var currentBoardIndex = 4; // To keep track of where on board. Hardcode instead of random
     var currentTetromino;
     // Let's keep track of previousTetromino as well
@@ -105,22 +115,54 @@ document.addEventListener("DOMContentLoaded", function (e) {
         oTetromino,
         iTetromino,
     ];
+    // Define upNextTetrominoes to display in mini upNextGrid
+    var upNextTetrominoes = [
+        [1, upNextGridWidth + 1, upNextGridWidth * 2 + 1, 2],
+        [
+            upNextGridWidth * 2,
+            upNextGridWidth * 2 + 1,
+            upNextGridWidth + 1,
+            upNextGridWidth + 2,
+        ],
+        [1, upNextGridWidth, upNextGridWidth + 1, upNextGridWidth + 2],
+        [0, 1, upNextGridWidth, upNextGridWidth + 1],
+        [1, upNextGridWidth + 1, upNextGridWidth * 2 + 1, upNextGridWidth * 3 + 1],
+    ];
     // ===== Define Functions
     // Static:
     // let currentTetrominoRotation = tetrominoes[0][0]; // Should match with lTetromino[0] rotation
     // console.log(currentTetrominoRotation); // [1, 11, 21, 2]
     // Random:
     function randomlySelectTetromino() {
-        var randomTetromino = Math.floor(Math.random() * tetrominoes.length);
-        // console.log("randomTetromino: ", randomTetromino);
-        var randomRotation = Math.floor(Math.random() * tetrominoes[randomTetromino].length);
+        var randomTetrominoIndex = Math.floor(Math.random() * tetrominoes.length);
+        // console.log("randomTetrominoIndex: ", randomTetrominoIndex);
+        var randomRotationIndex = Math.floor(Math.random() * tetrominoes[randomTetrominoIndex].length);
         // console.log("randomTetrominoRotation: ", randomTetrominoRotation);
         // Let's update the global tetrominoIndex and rotationIndex numbers for rotate()
-        tetrominoIndex = randomTetromino;
-        rotationIndex = randomRotation;
+        // Q: Could this be where I update a global upNextTetromino value as well?
+        // E.g, upNextTetromino = upNextTetrominoes[tetrominoIndex]
+        // A: YES! The below code achieves what we want!
+        // First set current tetrominoIndex to existing upNextTetrominoIndex
+        tetrominoIndex = upNextTetrominoIndex;
+        // Then update upNextTetrominoIndex with a randomTetrominoIndex value
+        upNextTetrominoIndex = randomTetrominoIndex;
+        // Set current rotationIndex to a randomRotationIndex
+        rotationIndex = randomRotationIndex;
         // Now let's put them together for the selectedTetrominoRotation
-        var selectedTetrominoAndRotation = tetrominoes[randomTetromino][randomRotation]; // Or, randomRotation if we want
+        var selectedTetrominoAndRotation = tetrominoes[tetrominoIndex][rotationIndex]; // Or, randomRotationIndex if we want
         return selectedTetrominoAndRotation;
+    }
+    function drawUpNextTetromino() {
+        // Clear/undraw our mini upNextGrid
+        upNextSquares.forEach(function (square) {
+            return square.classList.remove("tetromino");
+        });
+        // Grab the upNextTetromino using upNextTetrominoIndex and add "tetromino" class
+        var upNextTetromino = upNextTetrominoes[upNextTetrominoIndex];
+        console.log("upNextTetromino: ", upNextTetromino);
+        upNextTetromino.forEach(function (square) {
+            upNextSquares[square].classList.add("tetromino");
+        });
     }
     // Randomly select a currentPosition on the Grid
     //const currentGridPosition = Math.floor(Math.random() * squares.length);
@@ -181,7 +223,7 @@ document.addEventListener("DOMContentLoaded", function (e) {
     function control(e) {
         // Going to listen for certain KeyboardEvents to move the Tetromino
         console.log(e.key);
-        console.log(e.code);
+        // console.log(e.code);
         if (e.key === "ArrowLeft") {
             moveLeft();
         }
@@ -221,7 +263,7 @@ document.addEventListener("DOMContentLoaded", function (e) {
         // Update global currentTetromino value with new rotation
         // but retain the tetrominoIndex out of tetrominoes array
         currentTetromino = tetrominoes[tetrominoIndex][rotationIndex];
-        // TODO Don't let it rotate through to the other side
+        // FIXME Don't let it rotate through to the other side
         drawTetromino();
     }
     function moveDown() {
@@ -237,6 +279,7 @@ document.addEventListener("DOMContentLoaded", function (e) {
             // Freeze tetrominoCurrentPosition
             freezeTetromino(tetrominoCurrentPosition);
             initializeTetromino();
+            drawUpNextTetromino();
         }
         drawTetromino();
     }
@@ -293,6 +336,7 @@ document.addEventListener("DOMContentLoaded", function (e) {
             console.log("initializeTetromino:tetrominoNextPosition: ", tetrominoNextPosition);
             // Check whether this is also valid after its been repositioned by currentBoardIndex
             if (isValidTetrominoPosition(tetrominoNextPosition)) {
+                // Q: Draw here or inside moveDown()?
                 drawTetromino();
             }
             else {
@@ -328,8 +372,9 @@ document.addEventListener("DOMContentLoaded", function (e) {
         gameIsActive = true;
         initializeTetromino();
         drawTetromino();
+        drawUpNextTetromino();
         // Initiate game timer with interval
-        timer = setInterval(moveDown, 200);
+        timer = setInterval(moveDown, 500);
     }
     startGame();
     // Handler for the click event on the button

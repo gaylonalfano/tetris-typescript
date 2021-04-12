@@ -1,18 +1,6 @@
-/* .grid { */
-/*   width: 200px; */
-/*   height: 400px; */
-/*   display: flex; */
-/*   background-color: yellow; */
-/*   flex-wrap: wrap; */
-/* } */
-
-/* .grid div { */
-/*   height: 20px; */
-/*   width: 20px; */
-/*   /1* background-color: red; *1/ */
-/*   /1* border: 1px solid gray; *1/ */
-/* } */
-
+.container {
+  display: flex;
+}
 /* Making a inner board of 200px x 400px with 20x20 squares */
 /* Adding extra for the out-of-bounds sections */
 .container-grid {
@@ -68,4 +56,20 @@
 
 .tetromino {
   background-color: blue;
+}
+
+/* up-next Grid for Next Up Tetromino */
+.container-up-next-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  height: 80px;
+  width: 80px;
+  margin-left: 2em;
+  background-color: orange;
+}
+
+.up-next-square {
+  width: 20px;
+  height: 20px;
 }
