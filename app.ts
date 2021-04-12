@@ -27,7 +27,7 @@ document.addEventListener("DOMContentLoaded", (e) => {
   });
 
   const scoreDisplay = document.getElementById("score") as HTMLSpanElement;
-  const startStopButton = document.getElementById(
+  const startPauseButton = document.getElementById(
     "start-stop-button"
   ) as HTMLButtonElement;
 
@@ -48,7 +48,7 @@ document.addEventListener("DOMContentLoaded", (e) => {
   });
 
   // ===== Event Listeners
-  startStopButton.addEventListener("click", stopGame);
+  startPauseButton.addEventListener("click", toggleGame);
   document.addEventListener("keyup", control);
 
   // ===== Game Global State
@@ -62,7 +62,7 @@ document.addEventListener("DOMContentLoaded", (e) => {
   const upNextGridHeight = 4;
 
   // Global game state
-  let gameIsActive: boolean;
+  let gameIsActive: boolean = false;
 
   // Let's create a global currentTetromino that we can use to draw/undraw, etc.
   // NOTE Need to compute only once otherwise a new position will be computed
@@ -88,7 +88,7 @@ document.addEventListener("DOMContentLoaded", (e) => {
   // A: Use clearInterval(timerId) to cancel it
   // Need a Timer to keep track and draw/undraw as Tetromino moves
   // 0 means "no timer set": https://stackoverflow.com/questions/5978519/how-to-use-setinterval-and-clearinterval
-  let timer: number = 0;
+  let timer: number;
   // let timerId = setInterval(moveDown, 500);
   // const timerId = setInterval(() => {
   //   if (!tetrominoIsOutOfBounds) {
@@ -321,7 +321,7 @@ document.addEventListener("DOMContentLoaded", (e) => {
   }
 
   function moveDown(): void {
-    console.log("moveDown:currentBoardIndex:BEFORE ", currentBoardIndex);
+    // console.log("moveDown:currentBoardIndex:BEFORE ", currentBoardIndex);
     undrawTetromino();
     // Compute tetrominoCurrentPosition before shifting down by width
     let tetrominoCurrentPosition = computeTetrominoNextPosition();
@@ -417,13 +417,13 @@ document.addEventListener("DOMContentLoaded", (e) => {
         console.log(
           "The randomly selected Tetromino (currentTetromino) was okay but NOT the computed tetrominoNextPosition that uses currentBoardIndex"
         );
-        stopGame();
+        endGame();
       }
     } else {
       console.log(
         "The randomly selected Tetromino (currentTetromino) was NOT a valid position"
       );
-      stopGame();
+      endGame();
     }
   }
 
@@ -447,23 +447,58 @@ document.addEventListener("DOMContentLoaded", (e) => {
   // Q: Do I have to return this if I'm already updating the global var?
   // return currentTetromino;
 
-  // Create a startGame() that gets everything started
+  // Create a toggleGame() that gets everything started
   // NOTE This function is only ran once to start the game
-  function startGame(): void {
-    // Set globals
-    gameIsActive = true;
-    initializeTetromino();
-    drawTetromino();
-    drawUpNextTetromino();
-    // Initiate game timer with interval
-    timer = setInterval(moveDown, 500);
+  function toggleGame(): void {
+    if (timer) {
+      // Game is running so let's pause it
+      clearInterval(timer);
+      timer = 0;
+    } else {
+      // Game isn't running so either hasn't started or currently paused
+      if (!gameIsActive) {
+        // Game is STARTING
+        // Initialize the start of the game by setting globals
+        console.log("Starting game... timer: ", timer);
+        gameIsActive = true;
+        initializeTetromino();
+        drawUpNextTetromino();
+        // Initiate game timer with interval
+        timer = setInterval(moveDown, 500);
+      } else {
+        // Game is PAUSED. Let's resume the game.
+        // drawUpNextTetromino();
+        timer = setInterval(moveDown, 500);
+      }
+    }
+
+    // FAILED
+    // Let's check whether the game is already going
+    // if (!timer) {
+    //   // Initialize the start of the game by setting globals
+    //   console.log("Starting game... timer: ", timer);
+    //   gameIsActive = true;
+    //   initializeTetromino();
+    //   drawTetromino();
+    //   drawUpNextTetromino();
+    //   // Initiate game timer with interval
+    //   timer = setInterval(moveDown, 500);
+    // } else if (timer) {
+    //   // Game has started
+    //   // TODO Check if currently paused
+    //   console.log("Pausing game... timer BEFORE: ", timer);
+    //   // Let's store the timer value at pause
+    //   // Let's store a copy for local pausedTimer
+    //   // let pausedTimer = timer;
+    //   clearInterval(timer);
+    //   // timer = 0;
+    //   console.log("Pausing game... timer AFTER: ", timer);
+    // }
   }
 
-  startGame();
-
   // Handler for the click event on the button
-  function stopGame(): void {
-    console.log("stopGame triggered");
+  function endGame(): void {
+    console.log("endGame triggered");
     clearInterval(timer);
     timer = 0; // Ensure we've cleared the interval
     gameIsActive = false;

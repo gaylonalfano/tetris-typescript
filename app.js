@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", function (e) {
         square.textContent = index.toString();
     });
     var scoreDisplay = document.getElementById("score");
-    var startStopButton = document.getElementById("start-stop-button");
+    var startPauseButton = document.getElementById("start-stop-button");
     var upNextGrid = document.querySelector(".container-up-next-grid");
     var upNextSquaresNodeList = document.querySelectorAll(".up-next-square");
     var upNextSquares = Array.from(upNextSquaresNodeList);
@@ -27,7 +27,7 @@ document.addEventListener("DOMContentLoaded", function (e) {
         square.textContent = index.toString();
     });
     // ===== Event Listeners
-    startStopButton.addEventListener("click", stopGame);
+    startPauseButton.addEventListener("click", toggleGame);
     document.addEventListener("keyup", control);
     // ===== Game Global State
     // Grid Size
@@ -38,7 +38,7 @@ document.addEventListener("DOMContentLoaded", function (e) {
     var upNextGridWidth = 4;
     var upNextGridHeight = 4;
     // Global game state
-    var gameIsActive;
+    var gameIsActive = false;
     // Let's create a global currentTetromino that we can use to draw/undraw, etc.
     // NOTE Need to compute only once otherwise a new position will be computed
     // let currentTetromino = computeTetrominoNextPosition(
@@ -61,7 +61,7 @@ document.addEventListener("DOMContentLoaded", function (e) {
     // A: Use clearInterval(timerId) to cancel it
     // Need a Timer to keep track and draw/undraw as Tetromino moves
     // 0 means "no timer set": https://stackoverflow.com/questions/5978519/how-to-use-setinterval-and-clearinterval
-    var timer = 0;
+    var timer;
     // let timerId = setInterval(moveDown, 500);
     // const timerId = setInterval(() => {
     //   if (!tetrominoIsOutOfBounds) {
@@ -267,7 +267,7 @@ document.addEventListener("DOMContentLoaded", function (e) {
         drawTetromino();
     }
     function moveDown() {
-        console.log("moveDown:currentBoardIndex:BEFORE ", currentBoardIndex);
+        // console.log("moveDown:currentBoardIndex:BEFORE ", currentBoardIndex);
         undrawTetromino();
         // Compute tetrominoCurrentPosition before shifting down by width
         var tetrominoCurrentPosition = computeTetrominoNextPosition();
@@ -341,12 +341,12 @@ document.addEventListener("DOMContentLoaded", function (e) {
             }
             else {
                 console.log("The randomly selected Tetromino (currentTetromino) was okay but NOT the computed tetrominoNextPosition that uses currentBoardIndex");
-                stopGame();
+                endGame();
             }
         }
         else {
             console.log("The randomly selected Tetromino (currentTetromino) was NOT a valid position");
-            stopGame();
+            endGame();
         }
     }
     // === Testing stuff out
@@ -365,21 +365,58 @@ document.addEventListener("DOMContentLoaded", function (e) {
     // drawTetromino(currentTetromino);
     // Q: Do I have to return this if I'm already updating the global var?
     // return currentTetromino;
-    // Create a startGame() that gets everything started
+    // Create a toggleGame() that gets everything started
     // NOTE This function is only ran once to start the game
-    function startGame() {
-        // Set globals
-        gameIsActive = true;
-        initializeTetromino();
-        drawTetromino();
-        drawUpNextTetromino();
-        // Initiate game timer with interval
-        timer = setInterval(moveDown, 500);
+    function toggleGame() {
+        if (timer) {
+            // Game is running so let's pause it
+            clearInterval(timer);
+            timer = 0;
+        }
+        else {
+            // Game isn't running so either hasn't started or currently paused
+            if (!gameIsActive) {
+                // Game is STARTING
+                // Initialize the start of the game by setting globals
+                console.log("Starting game... timer: ", timer);
+                gameIsActive = true;
+                initializeTetromino();
+                drawUpNextTetromino();
+                // Initiate game timer with interval
+                timer = setInterval(moveDown, 500);
+            }
+            else {
+                // Game is PAUSED. Let's resume the game.
+                // drawUpNextTetromino();
+                timer = setInterval(moveDown, 500);
+            }
+        }
+        // FAILED
+        // Let's check whether the game is already going
+        // if (!timer) {
+        //   // Initialize the start of the game by setting globals
+        //   console.log("Starting game... timer: ", timer);
+        //   gameIsActive = true;
+        //   initializeTetromino();
+        //   drawTetromino();
+        //   drawUpNextTetromino();
+        //   // Initiate game timer with interval
+        //   timer = setInterval(moveDown, 500);
+        // } else if (timer) {
+        //   // Game has started
+        //   // TODO Check if currently paused
+        //   console.log("Pausing game... timer BEFORE: ", timer);
+        //   // Let's store the timer value at pause
+        //   // Let's store a copy for local pausedTimer
+        //   // let pausedTimer = timer;
+        //   clearInterval(timer);
+        //   // timer = 0;
+        //   console.log("Pausing game... timer AFTER: ", timer);
+        // }
     }
-    startGame();
     // Handler for the click event on the button
-    function stopGame() {
-        console.log("stopGame triggered");
+    function endGame() {
+        console.log("endGame triggered");
         clearInterval(timer);
         timer = 0; // Ensure we've cleared the interval
         gameIsActive = false;
