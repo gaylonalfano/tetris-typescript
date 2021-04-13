@@ -1,12 +1,12 @@
 document.addEventListener("DOMContentLoaded", function (e) {
-    console.group("group");
-    console.log(e.type);
-    console.log(e.target);
+    // console.group("group");
+    // console.log(e.type);
+    // console.log(e.target);
     // ===== DOM Elements
     var grid = document.querySelector(".container-grid");
     var board = document.querySelector(".container-board");
     var outOfBounds = Array.from(document.querySelectorAll(".oob"));
-    console.log("outOfBounds: ", outOfBounds);
+    // console.log("outOfBounds: ", outOfBounds);
     // squares as Array<HTMLDivElement>
     var squaresNodeList = document.querySelectorAll(".square");
     // const squares = Array.from(squaresNodeList); // TS2550 Error about Array.from()
@@ -19,6 +19,7 @@ document.addEventListener("DOMContentLoaded", function (e) {
         square.textContent = index.toString();
     });
     var scoreDisplay = document.getElementById("score");
+    var rowsDisplay = document.getElementById("rows");
     var startPauseButton = document.getElementById("start-stop-button");
     var upNextGrid = document.querySelector(".container-up-next-grid");
     var upNextSquaresNodeList = document.querySelectorAll(".up-next-square");
@@ -39,6 +40,8 @@ document.addEventListener("DOMContentLoaded", function (e) {
     var upNextGridHeight = 4;
     // Global game state
     var gameIsActive = false;
+    var score = 0;
+    var completedRows = 0;
     // Let's create a global currentTetromino that we can use to draw/undraw, etc.
     // NOTE Need to compute only once otherwise a new position will be computed
     // let currentTetromino = computeTetrominoNextPosition(
@@ -179,7 +182,7 @@ document.addEventListener("DOMContentLoaded", function (e) {
         // We add 'tetromino' class to draw().
         // Q: Could I just see if any value inside the array of numbers is out of
         // the range? Or, doesn't have a 'square' class?
-        return tetromino.some(function (square) { return square < 0 || square > boardSize; });
+        return tetromino.some(function (square) { return square < 0 || square >= boardSize; });
     }
     // Add a function that computes whether next position has "taken" squares
     function hasTaken(tetromino) {
@@ -234,6 +237,7 @@ document.addEventListener("DOMContentLoaded", function (e) {
             rotate();
         }
         else if (e.key === "ArrowDown") {
+            // TODO Implement ability to quickly double ArrowDown
             moveDown();
         }
     }
@@ -278,10 +282,18 @@ document.addEventListener("DOMContentLoaded", function (e) {
         if (!isValidTetrominoPosition(tetrominoNextPosition)) {
             // Freeze tetrominoCurrentPosition
             freezeTetromino(tetrominoCurrentPosition);
+            // Q: Where to add the computeScore()?
+            // A: Don't place here! A completed row IS valid because it
+            // doesn't have 'taken'!
+            // computeScore();
             initializeTetromino();
             drawUpNextTetromino();
         }
         drawTetromino();
+        // Q: Invoke computeScore() here after it's been drawn?
+        // This is a lot of looping....
+        // A: Yea, for now seems more reasonable.
+        computeScore();
     }
     function moveLeft() {
         undrawTetromino();
@@ -413,6 +425,56 @@ document.addEventListener("DOMContentLoaded", function (e) {
         //   // timer = 0;
         //   console.log("Pausing game... timer AFTER: ", timer);
         // }
+    }
+    function computeScore() {
+        // console.log("computeScore...");
+        // Loop through all squares by ROWS (i += width)
+        for (var i = 0; i < boardSize; i += width) {
+            // console.log(i); // 0 10 20 ... 190
+            var row = [
+                i,
+                i + 1,
+                i + 2,
+                i + 3,
+                i + 4,
+                i + 5,
+                i + 6,
+                i + 7,
+                i + 8,
+                i + 9,
+            ];
+            // console.log(row);
+            // Check whether all squares in row are 'taken'
+            var rowTaken = row.every(function (square) {
+                return squares[square].classList.contains("taken");
+            });
+            if (rowTaken) {
+                // console.log("Row is Taken");
+                // Increase score
+                score += width;
+                completedRows = score / width;
+                // Update scoreDisplay and rowsDisplay values
+                scoreDisplay.textContent = score.toString();
+                rowsDisplay.textContent = completedRows.toString();
+                // Remove the 'tetromino' and 'taken' classes to clear
+                row.forEach(function (square) {
+                    return squares[square].classList.remove("tetromino", "taken");
+                });
+                // Remove/delete the row from board using SPLICE
+                var completedRowOfSquares = squares.splice(i, width);
+                console.log("completedRowOfSquares: ", completedRowOfSquares);
+                // Q: What does squares look like now?
+                // A: squares.length is now 190 but div.square190+ still visible
+                // console.log("squares: ", squares);  // length = 190
+                // Let's concat to revert squares Array to original length
+                squares = completedRowOfSquares.concat(squares);
+                // Now let's rebuild the board
+                squares.forEach(function (square) { return board.appendChild(square); });
+            }
+            else {
+                // console.log("Row is NOT Taken");
+            }
+        }
     }
     // Handler for the click event on the button
     function endGame() {
