@@ -13,13 +13,13 @@ document.addEventListener("DOMContentLoaded", function (e) {
     // const squares = [...squaresNodeList];  // TS2488 Error
     var squares = Array.prototype.slice.call(squaresNodeList); // Or, [].slice.call()
     // Use data-* attribute to assign each div an index
-    squares.forEach(function (square, index) {
-        square.dataset.index = index.toString();
-        // Add labels to help
-        square.textContent = index.toString();
-    });
+    // squares.forEach((square, index) => {
+    //   square.dataset.index = index.toString();
+    //   // Add labels to help
+    //   square.textContent = index.toString();
+    // });
     var scoreDisplay = document.getElementById("score");
-    var rowsDisplay = document.getElementById("rows");
+    var linesDisplay = document.getElementById("rows");
     var startPauseButton = document.getElementById("start-stop-button");
     var upNextGrid = document.querySelector(".container-up-next-grid");
     var upNextSquaresNodeList = document.querySelectorAll(".up-next-square");
@@ -41,7 +41,7 @@ document.addEventListener("DOMContentLoaded", function (e) {
     // Global game state
     var gameIsActive = false;
     var score = 0;
-    var completedRows = 0;
+    var lines = 0;
     // Let's create a global currentTetromino that we can use to draw/undraw, etc.
     // NOTE Need to compute only once otherwise a new position will be computed
     // let currentTetromino = computeTetrominoNextPosition(
@@ -75,6 +75,13 @@ document.addEventListener("DOMContentLoaded", function (e) {
     //     // clearInterval(() => initializeTetromino());
     //   }
     // }, 500);
+    var tetrominoColors = [
+        "orange",
+        "cyan",
+        "yellow",
+        "blue",
+        "green",
+    ];
     // ===== Define dimensions Tetrominoes
     // NOTE We have a 10x20 Grid (200 divs) that wrap
     // NOTE Check the file 'Tetrominos' in this project folder
@@ -158,13 +165,18 @@ document.addEventListener("DOMContentLoaded", function (e) {
     function drawUpNextTetromino() {
         // Clear/undraw our mini upNextGrid
         upNextSquares.forEach(function (square) {
-            return square.classList.remove("tetromino");
+            square.classList.remove("tetromino");
+            // Reset the backgroundColor by setting to empty string
+            square.style.backgroundColor = "";
         });
         // Grab the upNextTetromino using upNextTetrominoIndex and add "tetromino" class
         var upNextTetromino = upNextTetrominoes[upNextTetrominoIndex];
         console.log("upNextTetromino: ", upNextTetromino);
         upNextTetromino.forEach(function (square) {
             upNextSquares[square].classList.add("tetromino");
+            // Let's add color. Our upNext tetromino index is stored in upNextTetrominoIndex
+            upNextSquares[square].style.backgroundColor =
+                tetrominoColors[upNextTetrominoIndex];
         });
     }
     // Randomly select a currentPosition on the Grid
@@ -203,6 +215,8 @@ document.addEventListener("DOMContentLoaded", function (e) {
     function freezeTetromino(tetromino) {
         tetromino.forEach(function (square) {
             squares[square].classList.add("tetromino", "taken");
+            // Make sure the tetromino color remains instead of reverting to blue
+            squares[square].style.backgroundColor = tetrominoColors[tetrominoIndex];
             console.log("AFTER freezing: squares[$square].classList:", squares[square].classList);
         });
     }
@@ -216,11 +230,18 @@ document.addEventListener("DOMContentLoaded", function (e) {
     function drawTetromino() {
         currentTetromino.forEach(function (square) {
             squares[square + currentBoardIndex].classList.add("tetromino");
+            // Let's add color. Our current tetromino index is stored in tetrominoIndex
+            squares[square + currentBoardIndex].style.backgroundColor =
+                tetrominoColors[tetrominoIndex];
         });
     }
     function undrawTetromino() {
         currentTetromino.forEach(function (square) {
             squares[square + currentBoardIndex].classList.remove("tetromino");
+            // Q: How to clear/reset to default style.backgroundColor?
+            // Apparently even removing the class 'tetromino' doesn't do it.
+            // A: Set it to an empty string!
+            squares[square + currentBoardIndex].style.backgroundColor = "";
         });
     }
     function control(e) {
@@ -452,13 +473,15 @@ document.addEventListener("DOMContentLoaded", function (e) {
                 // console.log("Row is Taken");
                 // Increase score
                 score += width;
-                completedRows = score / width;
-                // Update scoreDisplay and rowsDisplay values
+                lines = score / width;
+                // Update scoreDisplay and linesDisplay values
                 scoreDisplay.textContent = score.toString();
-                rowsDisplay.textContent = completedRows.toString();
+                linesDisplay.textContent = lines.toString();
                 // Remove the 'tetromino' and 'taken' classes to clear
                 row.forEach(function (square) {
-                    return squares[square].classList.remove("tetromino", "taken");
+                    squares[square].classList.remove("tetromino", "taken");
+                    // Remove the tetromino colors as well
+                    squares[square].style.backgroundColor = "";
                 });
                 // Remove/delete the row from board using SPLICE
                 var completedRowOfSquares = squares.splice(i, width);
