@@ -416,12 +416,12 @@ document.addEventListener("DOMContentLoaded", function (e) {
                 initializeTetromino();
                 drawUpNextTetromino();
                 // Initiate game timer with interval
-                timer = setInterval(moveDown, 500);
+                timer = setInterval(moveDown, 200);
             }
             else {
                 // Game is PAUSED. Let's resume the game.
                 // drawUpNextTetromino();
-                timer = setInterval(moveDown, 500);
+                timer = setInterval(moveDown, 200);
             }
         }
         // FAILED
